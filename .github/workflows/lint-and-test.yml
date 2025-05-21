@@ -2,6 +2,7 @@ name: CI-Lint-And-Test
 
 on:
   workflow_call:
+  workflow_dispatch: 
   pull_request:
     types: [opened, synchronize, reopened]
   merge_group:
