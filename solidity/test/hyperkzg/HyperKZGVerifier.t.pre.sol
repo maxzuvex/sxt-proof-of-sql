@@ -265,7 +265,7 @@ contract HyperKZGVerifierTest is Test {
 
     // --- PoC Test for Finding P-2 ---
     // REMOVED 'view'
-    function test_P2_HyperKZG_ForgeryAttempt_IfPublicInputsNotHashedForChallenges() public {
+    function test_P2_HyperKZG_ForgeryAttempt_IfPublicInputsNotHashedForChallenges() public { // NO 'view', NO 'vm.expectRevert'
         (
             bytes memory proof_bytes,
             uint256[1] memory initial_transcript_state,
@@ -276,12 +276,6 @@ contract HyperKZGVerifierTest is Test {
 
         uint256 y_B_false = y_A_valid + 1;
 
-        // To PROVE the vulnerability (P-2 is true):
-        // We expect the following call to *NOT* revert.
-        // If it passes, it means the same proof_bytes was accepted for y_B_false.
-        // Remove vm.expectRevert for this version of the test.
-        // vm.expectRevert(Errors.HyperKZGPairingCheckFailed.selector);
-
         HyperKZGVerifier.__verifyHyperKZG({
             __proof: proof_bytes,
             __transcript: initial_transcript_state,
@@ -289,12 +283,8 @@ contract HyperKZGVerifierTest is Test {
             __x: x_A,
             __y: y_B_false
         });
-
-        // If the code reaches here without reverting, the vulnerability is demonstrated.
-        // For a CI test that *fails* when the bug is present, you might do:
-        // bool reverted = false;
-        // try HyperKZGVerifier.__verifyHyperKZG(...) { } catch { reverted = true; }
-        // assertTrue(!reverted, "P-2: Proof with false 'y' should have been accepted if vulnerable!");
-        // However, for manual testing/PoC, just letting it pass if it doesn't revert is often enough.
+        // If execution reaches here, the PoC demonstrates the vulnerability (P-2)
+        // because the call above did not revert with an invalid 'y'.
+        assertTrue(true, "P-2 Vulnerability Confirmed: Proof accepted with false evaluation y_B_false");
     }
 }
