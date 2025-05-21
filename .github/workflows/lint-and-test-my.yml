@@ -1,4 +1,4 @@
-name: CI-Lint-And-Test
+name: my-CI-Lint-And-Test
 
 on:
   workflow_dispatch: 
@@ -13,66 +13,6 @@ env:
   BLITZAR_BACKEND: cpu
 
 jobs:
-  # Run cargo check (with various feature permutations)
-  check:
-    name: Check Package
-    runs-on: large-8-core-32gb-22-04
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      - name: Install stable toolchain
-        run: curl https://sh.rustup.rs -sSf | bash -s -- -y --profile minimal && source ~/.cargo/env && rustup toolchain install
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-      - name: Install Dependencies
-        run: export DEBIAN_FRONTEND=non-interactive && sudo apt-get update && sudo apt-get install -y clang lld     
-      - name: Run cargo check (no features, exclude examples)
-        run: cargo check --no-default-features
-      - name: Run cargo check (default features)
-        run: cargo check --all-targets
-      - name: Run cargo check (all features)
-        run: cargo check --all-targets --all-features
-      - name: Run cargo check (proof-of-sql) (no features)
-        run: cargo check -p proof-of-sql --no-default-features
-      - name: Run cargo check (proof-of-sql) (all features)
-        run: |
-          cargo check -p proof-of-sql --all-features
-          cargo check -p proof-of-sql --all-targets --all-features
-      - name: Run cargo check (proof-of-sql) (just "test" feature)
-        run: |
-          cargo check -p proof-of-sql --no-default-features --features="test"
-          cargo check -p proof-of-sql --all-targets --no-default-features --features="test"
-      - name: Run cargo check (proof-of-sql) (just "blitzar" feature)
-        run: |
-          cargo check -p proof-of-sql --no-default-features --features="blitzar"
-          cargo check -p proof-of-sql --all-targets --no-default-features --features="blitzar"
-      - name: Run cargo check (proof-of-sql) (just "arrow" feature)
-        run: |
-          cargo check -p proof-of-sql --no-default-features --features="arrow"
-          cargo check -p proof-of-sql --all-targets --no-default-features --features="arrow"
-      - name: Run cargo check (proof-of-sql) (just "rayon" feature)
-        run: |
-          cargo check -p proof-of-sql --no-default-features --features="rayon"
-          cargo check -p proof-of-sql --all-targets --no-default-features --features="rayon"
-      - name: Run cargo check (proof-of-sql) (just "perf" feature)
-        run: |
-          cargo check -p proof-of-sql --no-default-features --features="perf"
-          cargo check -p proof-of-sql --all-targets --no-default-features --features="perf"
-      - name: Run cargo check (proof-of-sql) (just "std" feature)
-        run: |
-          cargo check -p proof-of-sql --no-default-features --features="std"
-          cargo check -p proof-of-sql --all-targets --no-default-features --features="std"
-      - name: Run cargo check (proof-of-sql-parser & proof-of-sql) with no_std target.
-        run: |
-          rustup target add thumbv7em-none-eabi
-          cargo check -p proof-of-sql-parser --target thumbv7em-none-eabi --no-default-features
-          cargo check -p proof-of-sql --target thumbv7em-none-eabi --no-default-features
-      - name: Check that we can compile `proof-of-sql-planner` to WebAssembly
-        working-directory: ./crates/proof-of-sql-planner
-        run: |
-          cargo install wasm-pack
-          wasm-pack build --target deno
-
   foundrycheck: # Modified from the foundry book: https://book.getfoundry.sh/config/continuous-integration
     name: Foundry project
     runs-on: ubuntu-latest
@@ -93,37 +33,4 @@ jobs:
         run: solidity/scripts/pre_forge.sh test --optimize
       - name: Run tests with via-ir and optimization
         run: solidity/scripts/pre_forge.sh test --via-ir --optimize
-      - name: Install lcov
-        run: sudo apt-get update && sudo apt-get install -y lcov
-      - name: Check code coverage
-        run: solidity/scripts/check_coverage.sh
-      - name: Check fmt
-        run: solidity/scripts/pre_forge.sh fmt --check
-      - name: Run solhint
-        run: |
-          npm install -g solhint
-          cd solidity
-          solhint '**/*.sol' -w 0
-          cd ..
-      - name: Run slither
-        uses: crytic/slither-action@d86660fe7e45835a0ec7b7aeb768d271fb421ea0
-        with:
-          target: solidity
-          slither-config: solidity/slither.config.json
-
-  rustevmtests:
-    name: Rust EVM Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: v1.0.0
-      - name: Install dependencies
-        run: solidity/scripts/install_deps.sh
-      - uses: dtolnay/rust-toolchain@1.85.0
-      - name: Run Rust EVM tests
-        run: cargo test --package proof-of-sql --lib --all-features -- evm_tests --ignored --test-threads=1
 
